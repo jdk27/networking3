@@ -23,6 +23,8 @@ class Distance_Vector_Node(Node):
 
     # Need a function to check for shorter times from other DVS after cost or personal DV is changed
     # Use bellman ford here! maybe?
+
+    # Need to keep track of when we changed DV to increase seq num and resend to everyone
     
     # Return a string
     def __str__(self):
@@ -31,44 +33,61 @@ class Distance_Vector_Node(Node):
     # Receives a new link cost then updates self.costs and self.dv given the new information
     # Then calls to recalculate optimal DV using bellman-ford
     def link_has_been_updated(self, neighbor, latency):
+        neighbor_change = False
+        bellman_change = False
+
         if latency == -1:  # delete a link
+            # Probably not but maybe we send?
             if neighbor in self.neighbor_info:
-                self.remove_link(neighbor)
-        elif neighbor in self.neighbor_info:  # update a link
-            self.update_link_latency(neighbor, latency)
+                neighbor_change = self.remove_link(neighbor)
+        elif neighbor in self.neighbor_info:  # update a link 
+            neighbor_change = self.update_link_latency(neighbor, latency)
         else:  # create a link
-            self.create_link(neighbor, latency)
+            # Probably not, but idk
+            neighbor_change = self.create_link(neighbor, latency)
         # Check for short paths
-        # self.send_to_neighbors(self.format_message())
-        pass
+        bellman_change = self.bellman_ford()
+        # if bellman_change or neighbor_change: update sequence number and self.send_to_neighbors(self.format_message())
+        if bellman_change or neighbor_change:
+            self.seq_num += 1
+            self.send_to_neighbors(self.format_message())
 
     def remove_link(self, neighbor_id):
-        del self.neighbor_info[neighbor]
+        change = False
+        del self.neighbor_info[neighbor_id]
         for destination in self.dv:
             if self.dv[destination][1][0] == neighbor_id:
                 del self.dv[destination]
-                # see if neighbors have path to destination
+                change = True
+        return change
 
     # FIX: need to fix the path to the neighbor whose latency was updated
     def update_link_latency(self, neighbor_id, new_latency):
+        change = False
         length_change = new_latency - self.neighbor_info[neighbor_id].latency
         self.neighbor_info[neighbor_id].latency = new_latency
         for destination in self.dv:
-            if (destination == neighbor_id) and (latency <= self.dv[destination][0]):
-                self.dv[destination] = [latency,[neighbor_id]]
+            if (destination == neighbor_id) and (new_latency <= self.dv[destination][0]):
+                self.dv[destination] = [new_latency,[neighbor_id]]
+                change = True
             elif self.dv[destination][1][0] == neighbor_id:
                 self.dv[destination][0] += length_change
-        # check all other DVs to see if there exists a shorter path
+                change = True
+        return change
 
     def create_link(self, neighbor_id, latency):
+        change = False
         new_neighbor = self.Neighbor(neighbor_id, 0, latency, {})
         self.neighbor_info[neighbor_id] = new_neighbor
         # if there is no path to the new neighbor
         if neighbor_id not in self.dv:
             self.dv[neighbor_id] = [latency, [neighbor_id]]
+            change = True
         # if there was already a path to the neighbor and the one-hop cost is cheaper than the older path
         elif self.neighbor_info[neighbor_id].latency < self.dv[neighbor_id][0]:
             self.dv[neighbor_id] = [latency, [neighbor_id]]
+            change = True
+        return change
 
     # Given a new neighbor DV, update self.dv
     # Then call to optimize self.dv with bellman-ford
@@ -86,7 +105,8 @@ class Distance_Vector_Node(Node):
             self.update_personal_dv(message_id)
             # Then check for optimal
             
-            self.update_dv(message_id)  # TBD updates using bellman-ford
+            self.bellman_ford()  # TBD updates using bellman-ford
+
             # update the sequence number the node associates with the neighbor
             # for every destination in the messages DV
             # if the destination is in the node's DV, see if it needs to be updated
@@ -112,18 +132,24 @@ class Distance_Vector_Node(Node):
         latency = self.neighbor_info[neighbor_id].latency
         
         for destination in self.neighbor_info[neighbor_id].dv:
-            new_latency = latency + self.neighbor_info[neighbor_id].dv[destintion][0]
-            new_path = neighbor_id + self.neighbor_info[neighbor_id].dv[destintion][1]
+            new_latency = latency + self.neighbor_info[neighbor_id].dv[destination][0]
+            new_path = neighbor_id + self.neighbor_info[neighbor_id].dv[destination][1] # Will this just append to the front??????
             if destination in self.dv:
-                # Update according to bellman ford
-                if new_latency < self.dv[destination][0]:
-                    self.dv[destination][0] = new_latency
-                    self.dv[destination][1] = new_path
+                if self.dv[destination][1][0] == neighbor_id:
+                    self.dv[destination] = [new_latency, new_path]
             else:
                 self.dv[destination] = [new_latency, new_path]
 
 
     # Distributed bellman ford to find any shorter paths
     def bellman_ford(self):
-        for neighbor in self.dv
-
+        change = False
+        for destination in self.dv:
+            old_latency = self.dv[destination][0]
+            for neighbor in self.neighbor_info:
+                if destination in neighbor.dv:
+                    new_latency = neighbor.latency + neighbor.dv[destination][0]
+                    if new_latency < old_latency:
+                        self.dv[destination] = [new_latency, neighbor.id + neighbor.dv[destination][1]] # Will this just append to the front??????
+                        change = True
+        return change
