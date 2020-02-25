@@ -10,7 +10,8 @@ class Link_State_Node(Node):
 
     # Return a string
     def __str__(self):
-        return "Rewrite this function to define your node dump printout"
+        return "\r\n" + "Node ID: " + str(self.id) + "\r\n" + \
+               "Links: " + json.dumps(self.graph_costs)
 
     # Fill in this function
     # Update the costs in our graph costs and then send the message to everyone
@@ -34,10 +35,8 @@ class Link_State_Node(Node):
             duo = []
             for element in pair:
                 duo.append(element)
-            # msg = self.format_message(int(duo[0]), int(duo[1]), int(self.graph_costs[pair][1]), int(self.graph_costs[pair][0]))
-            self.send_to_neighbors(self.format_message(int(duo[0]), int(duo[1]), int(self.graph_costs[pair][1]), int(self.graph_costs[pair][0])))
-            # print('New message: ', msg)
-            # self.send_to_neighbors(json.dumps(msg))
+            self.send_to_neighbors(self.format_message(int(duo[0]), int(duo[1]), int(self.graph_costs[pair][0]), int(self.graph_costs[pair][1])))
+
 
     # Fill in this function
     # If new, update the costs in our graph costs and retransmit
@@ -70,7 +69,14 @@ class Link_State_Node(Node):
     # Return a neighbor, -1 if no path to destination
     # Run djikstra
     def get_next_hop(self, destination):
-        return self.dijkstra(destination)
+        print('Node ID: ', self.id)
+        print('Graph Costs: ', self.graph_costs)
+        next_hop = self.dijkstra(destination)
+        # print('next_hope: ', next_hop)
+        # print('destination: ', destination)
+
+        return next_hop
+        # return self.dijkstra(destination)
 
     def format_message(self, source, neighbor_id, latency, seq_num):
         json_message = {'source': int(source), 'destination' : neighbor_id,  'seq_num': seq_num, 'latency': latency }
@@ -117,7 +123,7 @@ class Link_State_Node(Node):
             # print('new neighbors: ', neighbors)
 
 
-        print('All nodes: ', nodes)
+        # print('All nodes: ', nodes)
         for node in nodes:
             dist[node] = math.inf
             prev[node] = -1
@@ -131,16 +137,18 @@ class Link_State_Node(Node):
             # print('Trying to delete: ', u)
             del q[u]
 
-            print('here are all my neighbors: ', neighbors[u])
+            # print('here are all my neighbors: ', neighbors[u])
             for v in neighbors[u]:
                 couple = frozenset([u, v])
+                # print('Couple: ', couple)
+                # print('costs: ', self.graph_costs[couple][0])
                 alt = dist[u] + self.graph_costs[couple][0]
                 if alt < dist[v]:
                     dist[v] = alt
                     prev[v] = u
                     q[v] = alt
-        print('Distances: ', dist)
-        print('Previouses: ', prev)
+        # print('Distances: ', dist)
+        # print('Previouses: ', prev)
 
         # returncle
         
@@ -149,6 +157,10 @@ class Link_State_Node(Node):
         while before != -1:
             path = [before] + path
             before = prev[before]
-        print('here is the path: ', path)
+        # print('here is the path: ', path)
+        print('Node: ', self.id)
+        print('Destination: ', destination)
+        print('Distances to destination?: ', dist)
+        print('Path to destination: ', path)
         return path[1]
 
