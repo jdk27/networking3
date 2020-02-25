@@ -3,6 +3,8 @@ import json
 import math
 
 
+# I don't think this works when paths are deleted!!!!!
+# why is it not doing the last one?
 class Link_State_Node(Node):
     def __init__(self, id):
         super().__init__(id)
@@ -10,7 +12,9 @@ class Link_State_Node(Node):
 
     # Return a string. FIX THIS
     def __str__(self):
-        return "\r\n" + "Node ID: " + str(self.id) + "\r\n"
+        latencies = str(self.graph_costs)
+        # print('Graph costs: ', self.graph_costs)
+        return "\r\n" + "Node ID: " + str(self.id) + "\r\n" + "Costs: " + latencies + "\r\n"
 
     # Fill in this function
     # Update the costs in our graph costs and then send the message to everyone
@@ -19,6 +23,8 @@ class Link_State_Node(Node):
         # latency = -1 if delete a link
         pair = frozenset([self.id,neighbor])
 
+        if latency == -1:
+            print('time to delete a node!! ')
         seq_num = 1
         if pair in self.graph_costs:
             seq_num = self.graph_costs[pair][1] + 1
@@ -68,8 +74,9 @@ class Link_State_Node(Node):
     # Return a neighbor, -1 if no path to destination
     # Run djikstra
     def get_next_hop(self, destination):
-        print('Node ID: ', self.id)
-        print('Graph Costs: ', self.graph_costs)
+        print('looking for ', destination)
+        # print('Node ID: ', self.id)
+        # print('Graph Costs: ', self.graph_costs)
         next_hop = self.dijkstra(destination)
         # print('next_hope: ', next_hop)
         # print('destination: ', destination)
@@ -141,11 +148,12 @@ class Link_State_Node(Node):
                 couple = frozenset([u, v])
                 # print('Couple: ', couple)
                 # print('costs: ', self.graph_costs[couple][0])
-                alt = dist[u] + self.graph_costs[couple][0]
-                if alt < dist[v]:
-                    dist[v] = alt
-                    prev[v] = u
-                    q[v] = alt
+                if self.graph_costs[couple][0] != -1:
+                    alt = dist[u] + self.graph_costs[couple][0]
+                    if alt < dist[v]:
+                        dist[v] = alt
+                        prev[v] = u
+                        q[v] = alt
         # print('Distances: ', dist)
         # print('Previouses: ', prev)
 
@@ -157,9 +165,9 @@ class Link_State_Node(Node):
             path = [before] + path
             before = prev[before]
         # print('here is the path: ', path)
-        print('Node: ', self.id)
-        print('Destination: ', destination)
-        print('Distances to destination?: ', dist)
-        print('Path to destination: ', path)
+        # print('Node: ', self.id)
+        # print('Destination: ', destination)
+        # print('Distances to destination?: ', dist)
+        # print('Path to destination: ', path)
         return path[1]
 
