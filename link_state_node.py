@@ -8,10 +8,9 @@ class Link_State_Node(Node):
         super().__init__(id)
         self.graph_costs = {}
 
-    # Return a string
+    # Return a string. FIX THIS
     def __str__(self):
-        return "\r\n" + "Node ID: " + str(self.id) + "\r\n" + \
-               "Links: " + json.dumps(self.graph_costs)
+        return "\r\n" + "Node ID: " + str(self.id) + "\r\n"
 
     # Fill in this function
     # Update the costs in our graph costs and then send the message to everyone
