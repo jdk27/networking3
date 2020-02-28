@@ -23,8 +23,8 @@ class Link_State_Node(Node):
         # latency = -1 if delete a link
         pair = frozenset([self.id,neighbor])
 
-        if latency == -1:
-            print('time to delete a node!! ')
+        # if latency == -1:
+        #     print('time to delete a node!! ')
         seq_num = 1
         if pair in self.graph_costs:
             seq_num = self.graph_costs[pair][1] + 1
@@ -74,7 +74,7 @@ class Link_State_Node(Node):
     # Return a neighbor, -1 if no path to destination
     # Run djikstra
     def get_next_hop(self, destination):
-        print('looking for ', destination)
+        # print('looking for ', destination)
         # print('Node ID: ', self.id)
         # print('Graph Costs: ', self.graph_costs)
         next_hop = self.dijkstra(destination)
@@ -156,8 +156,6 @@ class Link_State_Node(Node):
                         q[v] = alt
         # print('Distances: ', dist)
         # print('Previouses: ', prev)
-
-        # returncle
         
         before = prev[destination]
         path = [destination]
