@@ -90,7 +90,7 @@ class Link_State_Node(Node):
 
     def min_from_queue(self, q):
         min_val = math.inf
-        min_element = 0
+        min_element = -1
         for element in q:
             alt = q[element]
             if alt < min_val:
@@ -110,23 +110,25 @@ class Link_State_Node(Node):
         q = {}
         for pair in self.graph_costs:
             duo = []
-            for element in pair:
-                duo.append(element)
-                if element not in nodes:
-                    nodes.append(element)
+            print('Here is the pair:', self.graph_costs[pair])
+            if self.graph_costs[pair][0] != -1:
+                for element in pair:
+                    duo.append(element)
+                    if element not in nodes:
+                        nodes.append(element)
             
-            # print('here duo: ', duo)
-            # print('here is neighbors so far: ', neighbors[duo[0]] )
-            
-            if duo[0] in neighbors: 
-                neighbors[duo[0]] = neighbors[duo[0]] + [duo[1]]
-            else: 
-                neighbors[duo[0]] = [duo[1]]
-            if duo[1] in neighbors: 
-                neighbors[duo[1]] = neighbors[duo[1]] + [duo[0]]
-            else:
-                neighbors[duo[1]] = [duo[0]]
-            # print('new neighbors: ', neighbors)
+                # print('here duo: ', duo)
+                # print('here is neighbors so far: ', neighbors[duo[0]] )
+                
+                if duo[0] in neighbors: 
+                    neighbors[duo[0]] = neighbors[duo[0]] + [duo[1]]
+                else: 
+                    neighbors[duo[0]] = [duo[1]]
+                if duo[1] in neighbors: 
+                    neighbors[duo[1]] = neighbors[duo[1]] + [duo[0]]
+                else:
+                    neighbors[duo[1]] = [duo[0]]
+                # print('new neighbors: ', neighbors)
 
 
         # print('All nodes: ', nodes)
@@ -140,6 +142,8 @@ class Link_State_Node(Node):
         while len(q) > 0:
             u = self.min_from_queue(q)
             # print('here is the Q: ', q)
+            # print('Trying to delete: ', u)
+            # print('Here is the queue: ', q)
             # print('Trying to delete: ', u)
             del q[u]
 
