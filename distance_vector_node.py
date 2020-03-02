@@ -53,7 +53,6 @@ class Distance_Vector_Node(Node):
                 neighbor_change = self.remove_link(neighbor)
         # Updating the latency to a neighbor
         elif neighbor in self.neighbor_info: 
-            print('-----------------Updating link latency!!!')
             neighbor_change = self.update_link_latency(neighbor, latency)
         # We have a new linnk
         else:
@@ -68,13 +67,11 @@ class Distance_Vector_Node(Node):
         if bellman_change or neighbor_change:
             self.seq_num += 1
             self.send_to_neighbors(self.format_message())
-            # print('the heck we send: ', self.format_message())
 
 
     # Remove from our neighbor info and if any destination in our DV us it as a 
     # first hope, then delete those from the DV at the moment
     def remove_link(self, neighbor_id):
-        print('we are deleting something!')
         change = False
         deleted = []
         del self.neighbor_info[neighbor_id]
@@ -167,11 +164,9 @@ class Distance_Vector_Node(Node):
     def get_next_hop(self, destination):
         destination = str(destination)
         self.bellman_ford()
-        # print('OUR DV: ', str(self))
         if destination in self.dv:
             return int(self.dv[destination][1][0])
         else:
-            print('ohhh no')
             return -1
 
     def format_message(self):
