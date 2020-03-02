@@ -35,6 +35,7 @@ class Link_State_Node(Node):
         # print('sending a new cost: ', latency)
         self.send_to_neighbors(self.format_message(self.id, neighbor,latency, seq_num))
 
+        # Sending everything over to keep everyone up to date if they are new :)
         for pair in self.graph_costs:
             duo = []
             for element in pair:

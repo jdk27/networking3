@@ -53,6 +53,7 @@ class Distance_Vector_Node(Node):
                 neighbor_change = self.remove_link(neighbor)
         # Updating the latency to a neighbor
         elif neighbor in self.neighbor_info: 
+            print('-----------------Updating link latency!!!')
             neighbor_change = self.update_link_latency(neighbor, latency)
         # We have a new linnk
         else:
@@ -93,7 +94,7 @@ class Distance_Vector_Node(Node):
     # We will then have to check for shorter paths later
     def update_link_latency(self, neighbor_id, new_latency):
         change = False
-        length_change = new_latency - self.neighbor_info[neighbor_id].latency
+        # length_change = new_latency - self.neighbor_info[neighbor_id].latency
         self.neighbor_info[neighbor_id].latency = new_latency
 
         # If a destination used the new link as the first hop, update to the new total latency
@@ -102,7 +103,8 @@ class Distance_Vector_Node(Node):
             if destination == neighbor_id:
                 self.dv[destination] = [new_latency, [neighbor_id]]
             elif (len(self.dv[destination][1]) != 0) and (self.dv[destination][1][0] == neighbor_id):
-                self.dv[destination][0] += length_change
+                # self.dv[destination][0] += length_change
+                self.dv[destination][0] += new_latency
                 change = True
         return change
 
@@ -165,6 +167,7 @@ class Distance_Vector_Node(Node):
     def get_next_hop(self, destination):
         destination = str(destination)
         self.bellman_ford()
+        # print('OUR DV: ', str(self))
         if destination in self.dv:
             return int(self.dv[destination][1][0])
         else:
@@ -224,9 +227,7 @@ class Distance_Vector_Node(Node):
                 # If self node is present in path, this is a loop and skip
                 if str(self.id) in new_path:
                     continue
-                else:
-                    # new_path = [neighbor_id] + new_path
-                    
+                else:                    
                     # If we don't have the destination, add it to our DV
                     if destination not in self.dv:
                         self.dv[destination] = [new_latency, new_path]
