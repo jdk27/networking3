@@ -27,11 +27,11 @@ class Distance_Vector_Node(Node):
     # Need to keep track of when we changed DV to increase seq num and resend to everyone
     
     def print_neighbor_dvs(self):
-        print('Get ready for neighbors of : ', self.id)
+        print('++++++++++++++Get ready for neighbors of : ', self.id)
         for neighbor_id in self.neighbor_info:
             print('Neighbor ID: ', neighbor_id)
             print(json.dumps(self.neighbor_info[neighbor_id].dv))
-        print('Done with neighbors')
+        print('++++++++++++++Done with neighbors')
     
     # Return a string
     def __str__(self):
@@ -68,11 +68,13 @@ class Distance_Vector_Node(Node):
         if bellman_change or neighbor_change:
             self.seq_num += 1
             self.send_to_neighbors(self.format_message())
+            # print('the heck we send: ', self.format_message())
 
 
     # Remove from our neighbor info and if any destination in our DV us it as a 
     # first hope, then delete those from the DV at the moment
     def remove_link(self, neighbor_id):
+        print('we are deleting something!')
         change = False
         deleted = []
         del self.neighbor_info[neighbor_id]
@@ -98,7 +100,9 @@ class Distance_Vector_Node(Node):
         # If a destination used the new link as the first hop, update to the new total latency
         # Will check for better option later
         for destination in self.dv:
-            if (len(self.dv[destination][1]) != 0) and (self.dv[destination][1][0] == neighbor_id):
+            if destination == neighbor_id:
+                self.dv[destination] = [new_latency, [neighbor_id]]
+            elif (len(self.dv[destination][1]) != 0) and (self.dv[destination][1][0] == neighbor_id):
                 self.dv[destination][0] += length_change
                 change = True
         return change
@@ -120,23 +124,30 @@ class Distance_Vector_Node(Node):
             self.dv[neighbor_id] = [latency, [neighbor_id]]
             change = True
         return change
-
-
+    
     # Given a new neighbor DV, update self.dv
     # Then call to optimize self.dv with bellman-ford
     def process_incoming_routing_message(self, m):
+        # print('the message: ', m)
+        # print('######################')
+        # print('WE GOT A MESSAGE!!!!!!!', m)
+        # print('Before the message DV: ', str(self))
         # Load the message
         try: 
             json_object = json.loads(m)
         except: 
+            # print('FUCKKKKKK')
+            # print(m)
+            # print('shitittttt')
             return
         message_id = str(json_object["id"])
         message_seq_num = json_object["seq_num"]
         message_dv = json_object["dv"]
 
+        # print('The message SEQ num: ', message_seq_num)
+        # print('The message DV: ', message_dv)
+
         # If this is indeed a new message then we will use it
-        print('What is message id: ', message_id)
-        print('Is it in neighbor info: ', list(self.neighbor_info.keys()))
         if (message_id in self.neighbor_info) and (message_seq_num > self.neighbor_info[message_id].seq_num):
             change = False
             bellman_change = False
@@ -151,10 +162,15 @@ class Distance_Vector_Node(Node):
             # Check all neighbor DVs to see if there are better options
             bellman_change = self.bellman_ford()
 
+            # if change or bellman_change:
+            #     # print('New DV: ', str(self))
+            #     # print('---------------')
+            
             # If our DV has changed, send it to our neighbors
             if change or bellman_change:
                 self.seq_num += 1
-                self.send_to_neighbors(self.format_message)
+                self.send_to_neighbors(self.format_message())
+                # print('the heck we send: ', self.format_message())
         # else do nothing the information is old
         else: 
             pass
@@ -164,16 +180,22 @@ class Distance_Vector_Node(Node):
     # Check routing table
     def get_next_hop(self, destination):
         destination = str(destination)
-        print('Jeez what is the dv: ', self.dv)
+        # print('Jeez what is the dv: ', self.dv)
         self.bellman_ford()
-        if destination in self.dv or destination in self.dv:
+        # self.print_neighbor_dvs()
+        if destination in self.dv:
             return int(self.dv[destination][1][0])
         else:
             print('ohhh no')
             return -1
 
     def format_message(self):
-        json_message = {"id": self.id, "seq_num": self.seq_num, "dv": self.dv}
+        id_copy = self.id
+        seq_copy = self.seq_num
+        dv_copy = self.dv
+        # json_message = {"id": self.id, "seq_num": self.seq_num, "dv": self.dv}
+        json_message = {"id": id_copy, "seq_num": seq_copy, "dv": dv_copy}
+        # print('Just sent this shit: ', json_message)
         return json.dumps(json_message)
 
     # When receiving a new message, update any latencies or paths for destinations that use
@@ -182,13 +204,28 @@ class Distance_Vector_Node(Node):
     def update_personal_dv(self, neighbor_id):
         latency = self.neighbor_info[neighbor_id].latency
         change = False
-
+        deleted = []
+        
         for destination in self.dv:
             if (len(self.dv[destination][1]) != 0) and (self.dv[destination][1][0] == neighbor_id):
-                if(self.dv[destination][1][1:] != self.neighbor_info[neighbor_id].dv[destination][1]):
-                    new_path = [neighbor_id] + self.neighbor_info[neighbor_id].dv[destination][1]
-                    self.dv[destination] = [latency + self.neighbor_info[neighbor_id].dv[destination][0], new_path]
-                    change = True
+                # print('Destination: ', destination)
+                # print('Our dv: ', self.dv)
+                # print('Neighbor DV: ', self.neighbor_info[neighbor_id].dv)
+                if destination in self.neighbor_info[neighbor_id].dv:
+                    if self.dv[destination][1][1:] != self.neighbor_info[neighbor_id].dv[destination][1]:
+                        new_path = [neighbor_id] + self.neighbor_info[neighbor_id].dv[destination][1]
+                        print('Our node: ', self.id)
+                        print('new path: ', new_path)
+                        if str(self.id) in new_path:
+                            deleted.append(destination)
+                        else:
+                            self.dv[destination] = [latency + self.neighbor_info[neighbor_id].dv[destination][0], new_path]
+                        change = True
+                else:
+                    deleted.append(destination)
+
+        for element in deleted:
+            del self.dv[element]
 
         return change
 
@@ -197,8 +234,8 @@ class Distance_Vector_Node(Node):
         # for destination in self.dv:
         #     # If the first hop in our DV is the neighbor associated with the message:
         #     if (len(self.dv[destination][1]) != 0) and (self.dv[destination][1][0] == neighbor_id): 
-        #         print('Our path: ', self.dv[destination][1])
-        #         print('from : ', self.id)
+        #         # print('Our path: ', self.dv[destination][1])
+        #         # print('from : ', self.id)
         #         # Check if that destination was removed from the neighbor DV 
         #         # and should be removed from ours as well
         #         if destination not in self.neighbor_info[neighbor_id].dv:
@@ -228,8 +265,11 @@ class Distance_Vector_Node(Node):
     def bellman_ford(self):
         change = False
 
-        # For all destinations in our neighbor DVs, see if there are any better paths
+        # print('-------------')
+        # print('Before bellman: ', str(self))
+        # self.print_neighbor_dvs()
         
+        # For all destinations in our neighbor DVs, see if there are any better paths 
         for neighbor_id in self.neighbor_info:
             for destination in self.neighbor_info[neighbor_id].dv:
                 neighbor = self.neighbor_info[neighbor_id]
@@ -239,7 +279,7 @@ class Distance_Vector_Node(Node):
 
                 
                 # If self node is present in path, this is a loop and skip
-                if self.id in new_path:
+                if str(self.id) in new_path:
                     continue
                 else:
                     # new_path = [neighbor_id] + new_path
@@ -268,6 +308,9 @@ class Distance_Vector_Node(Node):
         #             self.dv[neighbor_id] = [new_latency, [neighbor_id]]  
         #             change = True 
 
+        # if change:
+        #     print('After bellman: ', str(self))
+        # print('**************')
         return change
 
 
