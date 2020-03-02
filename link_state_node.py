@@ -1,6 +1,5 @@
 from simulator.node import Node
 import json
-import math
 
 
 # I don't think this works when paths are deleted!!!!!
@@ -89,7 +88,7 @@ class Link_State_Node(Node):
         return json.dumps(json_message)
 
     def min_from_queue(self, q):
-        min_val = math.inf
+        min_val = float('inf')
         min_element = -1
         for element in q:
             alt = q[element]
@@ -133,9 +132,9 @@ class Link_State_Node(Node):
 
         # print('All nodes: ', nodes)
         for node in nodes:
-            dist[node] = math.inf
+            dist[node] = float('inf')
             prev[node] = -1
-            q[node] = math.inf
+            q[node] = float('inf')
         q[self.id] = 0
         dist[self.id] = 0
 
